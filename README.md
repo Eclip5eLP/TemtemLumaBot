@@ -28,7 +28,7 @@ If you are on windows you can also just run the "run.bat" file.<br/>
 }
 ```
 <br/>
-Supports 16:9 and 21:9 formats.<br/>
+Supports 1920x1080 and 3440x1440 resolutions.<br/>
 Change resolution to 0 or 1 respectively.<br/>
 <br/>
 conApi lets you send the console outputs to a remote server if desired.
