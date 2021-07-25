@@ -141,7 +141,7 @@ def checkBattle():
 #Reposition Character Manual
 def repositionManual():
 	terminal(Fore.RED + "Please reposition character" + Fore.WHITE)
-	while keyboard.is_pressed('0') == False:
+	while keyboard.is_pressed('0') == False or checkBattle() == False:
 		time.sleep(0.5)
 	terminal(Fore.GREEN + "Bot resumed" + Fore.WHITE)
 
@@ -153,6 +153,7 @@ def repositionAuto():
 	if paused == False:
 
 		startTime = datetime.now()
+		delta = datetime.now() - startTime
 		terminal("Finding Grass...")
 
 		while delta.seconds <= reposTime * 2:
