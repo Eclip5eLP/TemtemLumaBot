@@ -5,7 +5,6 @@
 Uses image recognition and keyboard inputs to find Lumas. Does NOT edit memory or game files.<br/>
 Currently only works for grass and cave backgrounds. (Adding the others soon)<br/>
 <br/>
-Graphical Settings editor may come later too.<br/>
 
 ## How to use
 
