@@ -40,6 +40,7 @@ walkTime = settings['walkTime']
 conApi = settings['conApi']
 
 #Vars
+version = "0.3"
 inbattle = False
 result = None
 encounter = datetime.now()
@@ -157,6 +158,41 @@ def terminal(text):
 		apiCall = conApi + "?app=" + appName + "&log=" + text
 		response = requests.get(apiCall)
 
+def checkLuma():
+	global inbattle
+	global result
+	global encounter
+	global lumaCheck
+	global reposTime
+
+	if inbattle == True:
+		time.sleep(1)
+		return search()
+	else: #Walk
+		walkLR()
+		delta = datetime.now() - encounter
+		if delta.seconds >= reposTime: #Reposition
+			if repositionAuto() == False:
+				repositionManual()
+
+def search():
+	global lumaCheck
+	global result
+	global encounter
+
+	lumaList = ['lumaGrass', 'lumaCave']
+
+	for img in lumaList:
+		if pyautogui.locateOnScreen('./needle/' + img + '.png', confidence=lumaCheck) != None:
+			terminal(Fore.CYAN + "Luma found!" + Fore.WHITE)
+			result = True
+			return True
+		else:
+			result = False
+			battleFlee()
+			encounter = datetime.now()
+	return False
+
 #Start Bot
 terminal("Temtem Luma Hunting Bot\nMade by Eclip5e\n")
 terminal("Initializing...")
@@ -165,26 +201,9 @@ terminal(Fore.GREEN + "Bot running!" + Fore.WHITE)
 
 #Main Loop
 while keyboard.is_pressed('q') == False:
-
 	checkPause()
 	checkBattle()
-
-	#Check Luma
-	if inbattle == True:
-		time.sleep(1)
-		if pyautogui.locateOnScreen('luma.png', confidence=lumaCheck) != None:
-			terminal(Fore.CYAN + "Luma found!" + Fore.WHITE)
-			result = True
-			break
-		else:
-			result = False
-			battleFlee()
-			encounter = datetime.now()
-	else: #Walk
-		walkLR()
-		delta = datetime.now() - encounter
-		if delta.seconds >= reposTime: #Reposition
-			if repositionAuto() == False:
-				repositionManual()
+	if checkLuma() == True:
+		break
 
 terminal(Fore.LIGHTRED_EX + "Quit" + Fore.WHITE)
