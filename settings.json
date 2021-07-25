@@ -1,5 +1,5 @@
 {
-    "resolution": 1,
+    "resolution": 0,
     "resList": [
         [
             1920,
@@ -19,5 +19,5 @@
         "random",
         "real"
     ],
-    "conApi": "https://eclip5e.bplaced.net/development/pyTerminal/api.php"
+    "conApi": ""
 }
