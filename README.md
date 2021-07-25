@@ -15,17 +15,17 @@ If you are on windows you can also just run the "run.bat" file.<br/>
 ## Settings
 
 `
-{<br/>
-	"resolution": 0,<br/>
-	"resList": [<br/>
-			[1920,1080],<br/>
-			[3440,1440]<br/>
-		],<br/>
-	"walkTime": 0.1,<br/>
-	"reposTime": 25,<br/>
-	"lumaCheck": 0.65,<br/>
-	"conApi": ""<br/>
-}<br/>
+{
+	"resolution": 0,
+	"resList": [
+			[1920,1080],
+			[3440,1440]
+		],
+	"walkTime": 0.1,
+	"reposTime": 25,
+	"lumaCheck": 0.65,
+	"conApi": ""
+}
 `
 <br/>
 Supports 16:9 and 21:9 formats.<br/>
