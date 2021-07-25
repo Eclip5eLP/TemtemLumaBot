@@ -11,6 +11,10 @@ Graphical Settings editor may come later too.<br/>
 
 Run "python LumaBot.py".<br/>
 If you are on windows you can also just run the "run.bat" file.<br/>
+<br/>
+Bot Controls:<br/>
+Q - Stop
+P - Pause
 
 ## Settings
 
