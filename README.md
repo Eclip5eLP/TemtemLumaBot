@@ -9,12 +9,14 @@ Graphical Settings editor may come later too.<br/>
 
 ## How to use
 
-Run "python LumaBot.py".<br/>
-If you are on windows you can also just run the "run.bat" file.<br/>
+Run ```python LumaBot.py``` in your terminal.<br/>
+If you are on windows you can also just execute the ```run.bat``` file.<br/>
 <br/>
 Bot Controls:<br/>
-Q - Stop<br/>
+```
+Q - Stop
 P - Pause
+```
 
 ## Settings
 
@@ -36,3 +38,35 @@ Supports 1920x1080 and 3440x1440 resolutions.<br/>
 Change resolution to 0 or 1 respectively.<br/>
 <br/>
 conApi lets you send the console outputs to a remote server if desired.
+
+## Server API for output
+
+This is a possible solution for an API that accepts the bots output and saves it in a file on the server.
+
+```
+<?php
+//Log to Terminal
+if (isset($_GET["log"])) {
+	if (isset($_GET["app"])) {
+		$file = "terminal.log";
+
+		//Read
+		$cont = "";
+		if (file_exists($file)) $cont = file_get_contents($file);
+
+		//Fix output (Bot Output includes terminal color coding, this removes that)
+		$output = preg_replace("/[[:cntrl:]]/", "", $_GET["log"]);
+		$output = preg_replace('/\[..m/i', '', $output);
+		
+		//Write
+		$date = date('Y-m-d H:i:s');
+		$cont = $cont."[".$_GET["app"]."](".$date.") ".$output."&#13;&#10;";
+		$fp = fopen($file, "w");
+  		fwrite($fp, $cont);
+  		fclose($fp);
+
+  		echo "200";
+	}
+}
+?>
+```
