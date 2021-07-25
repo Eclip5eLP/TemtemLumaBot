@@ -22,15 +22,27 @@ P - Pause
 
 ```
 {
-	"resolution": 0,
-	"resList": [
-		[1920,1080],
-		[3440,1440]
-	],
-	"walkTime": 0.1,
-	"reposTime": 25,
-	"lumaCheck": 0.65,
-	"conApi": ""
+    "resolution": 0,
+    "resList": [
+        [
+            1920,
+            1080
+        ],
+        [
+            3440,
+            1440
+        ]
+    ],
+    "walkTime": 0.1,
+    "reposTime": 30.0,
+    "lumaCheck": 0.65,
+    "pattern": 0,
+    "patternList": [
+        "fast",
+        "random",
+        "real"
+    ],
+    "conApi": ""
 }
 ```
 <br/>
