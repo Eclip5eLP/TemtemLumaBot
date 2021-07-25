@@ -14,7 +14,7 @@ If you are on windows you can also just run the "run.bat" file.<br/>
 
 ## Settings
 
-`
+```
 {
 	"resolution": 0,
 	"resList": [
@@ -26,7 +26,7 @@ If you are on windows you can also just run the "run.bat" file.<br/>
 	"lumaCheck": 0.65,
 	"conApi": ""
 }
-`
+```
 <br/>
 Supports 16:9 and 21:9 formats.<br/>
 Change resolution to 0 or 1 respectively.<br/>
