@@ -13,7 +13,7 @@ Run "python LumaBot.py".<br/>
 If you are on windows you can also just run the "run.bat" file.<br/>
 <br/>
 Bot Controls:<br/>
-Q - Stop
+Q - Stop<br/>
 P - Pause
 
 ## Settings
