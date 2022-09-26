@@ -1,23 +1,24 @@
 {
-    "resolution": 0,
-    "resList": [
-        [
-            1920,
-            1080
-        ],
-        [
-            3440,
-            1440
-        ]
+    "reposType": 0,
+    "walkTime": [
+        0.2,
+        0.2
     ],
-    "walkTime": 0.1,
     "reposTime": 30.0,
-    "lumaCheck": 0.65,
+    "lumaCheck": 0.55,
     "pattern": 0,
     "patternList": [
         "fast",
         "random",
         "real"
     ],
-    "conApi": ""
+    "controls": {
+        "exit": "1",
+        "pause": "p",
+        "hold": "0",
+        "left": "a",
+        "right": "d",
+        "up": "w",
+        "down": "s"
+    }
 }

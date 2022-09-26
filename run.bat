@@ -1,6 +1,6 @@
 @echo off
-title Temtem Luma Hunting Bot
+title Temtem LumaBot
 
 pushd %~dp0
-python LumaBot.py
+python Launcher.py
 exit

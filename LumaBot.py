@@ -2,140 +2,227 @@
 # Made by Eclip5e #
 ###################
 
-#Check installed Modules
+# Check installed Modules
 import sys
-import subprocess
-import pkg_resources
+sys.path.append('./data')
+from importer import Importer
+Importer.verifyLibs({'pyautogui', 'keyboard', 'colorama', 'datetime', 'pypiwin32'})
 
-required = {'pyautogui', 'keyboard', 'colorama', 'datetime'}
-installed = {pkg.key for pkg in pkg_resources.working_set}
-missing = required - installed
-
-if missing:
-	print("Installing dependencies...")
-	python = sys.executable
-	subprocess.check_call([python, '-m', 'pip', 'install', *missing], stdout=subprocess.DEVNULL)
-
-#Import Modules
+# Import Modules
 from pyautogui import *
 from datetime import datetime, timedelta
-from colorama import init, Fore, Back, Style
+from colorama import Fore, Back, Style
+from ecpreader import ecpreader
+import os
 import pyautogui
 import time
 import keyboard
 import random
 import win32api, win32con
-import requests
 import json
-from subprocess import call
-import tkinter as tk
-from tkinter import ttk
-from tkinter import * 
+import colorama
 
-#Load Settings
+# Load Settings
 with open('settings.json') as f:
 	settings = json.load(f)
 
-### GUI ###
+colorama.init()
 
-# this is a function which returns the selected combo box item
-def resolutionGet():
-	return resolutionSelect.get()
+class LumaBot:
+	# Setup
+	appName = "Temtem LumaBot"
+	reposTime = settings['reposTime']
+	lumaCheck = settings['lumaCheck']
+	walkTime = settings['walkTime']
+	reposType = settings['reposType']
+	controls = settings['controls']
 
-# this is a function which returns the selected combo box item
-def patternGet():
-	return patternSelect.get()
+	version = "0.4.1"
+	inbattle = False
+	encounter = datetime.now()
+	tracker = 0
+	paused = False
+	found = False
+	clr = "                 "
+	runtime = None
+	freader = ecpreader()
 
-# this is a function to get the user input from the text input box
-def reposTimeGet():
-	userInput = reposTimeIn.get()
-	return userInput
+	# Click Function
+	def click(self, x,y):
+		win32api.SetCursorPos((x,y))
+		win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
+		time.sleep(self.randnum(0.075, 0.085))
+		win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
 
-# this is a function to get the user input from the text input box
-def walkTimeGet():
-	userInput = walkTimeIn.get()
-	return userInput
+	# Save Runtime
+	def saveRuntime(self, name):
+		file = "./data/" + name + ".ecp"
+		runvars = json.dumps({"appName":self.appName,"reposTime":self.reposTime,"reposType":self.reposType,"lumaCheck":self.lumaCheck,"walkTime":self.walkTime,"controls":self.controls,"version":self.version,"inbattle":self.inbattle,"tracker":self.tracker,"paused":self.paused,"found":self.found})
+		if (os.path.exists(file)):
+			os.remove(file)
+		self.freader.make(file, runvars, 1)
 
-# this is a function to get the user input from the text input box
-def conApiGet():
-	userInput = conApiIn.get()
-	return userInput
+	# Load Runtime
+	def loadRuntime(self, name):
+		file = "./data/" + name + ".ecp"
+		if (os.path.exists(file)):
+			return self.freader.read(file)
+		return None
 
-# this is the function called when the button is clicked
-def btnSave():
-	global settings
+	def randnum(self, a, b):
+		return round(random.uniform(a, b), 3)
 
-	settings['conApi'] = conApiGet()
-	settings['walkTime'] = float(walkTimeGet())
-	settings['reposTime'] = float(reposTimeGet())
-	settings['resolution'] = resolutionSelect.current()
-	settings['pattern'] = patternSelect.current()
+	# Flee from Battle
+	def battleFlee(self):
+		if not keyboard.is_pressed(self.controls["hold"]):
+			find = self.search('flee')
+			if find != False:
+				click(find.left + 10, find.top + 10)
+				time.sleep(self.randnum(0.45, 0.55))
+				click(find.left + 10, find.top + 10)
+				self.inbattle = False
+				time.sleep(self.randnum(1.5, 2.5))
 
-	with open('settings.json', 'w', encoding='utf-8') as f:
-		json.dump(settings, f, ensure_ascii=False, indent=4)
+	# Walk left and right
+	def walkLR(self):
+		self.walk(self.controls["left"])
+		time.sleep(self.randnum(0.25, 0.45))
+		self.walk(self.controls["right"])
+	# Walk up and down
+	def walkUD(self):
+		self.walk(self.controls["up"])
+		time.sleep(self.randnum(0.25, 0.45))
+		self.walk(self.controls["down"])
 
-	print("Settings Saved")
+	# Walk any direction
+	def walk(self, direction):
+		if not keyboard.is_pressed(self.controls["hold"]) and not self.paused:
+			keyboard.press(direction)
+			time.sleep(self.randnum(self.walkTime[0], self.walkTime[1]))
+			keyboard.release(direction)
 
-# this is the function called when the button is clicked
-def btnStart():
-	call('start /wait python core.py', shell=True)
-	print("Bot Started")
+	# Pause Bot
+	def checkPause(self):
+		if self.paused and keyboard.is_pressed(self.controls["pause"]): # Resume
+			self.paused = False
+			print(Fore.GREEN + "Resumed" + Fore.WHITE+self.clr, end='\r')
+			self.encounter = datetime.now()
+			time.sleep(0.75)
+			return True
+		if keyboard.is_pressed(self.controls["pause"]): # Pause
+			self.paused = True
+			print(Fore.GREEN + "Paused" + Fore.WHITE+self.clr, end='\r')
+			time.sleep(0.75)
+			return True
 
-root = Tk()
+	# Check if inside Battle
+	def checkBattle(self):
+		# Check for Battle
+		find = self.search('flee')
+		if find != False:
+			print(Fore.GREEN + "Battle found" + Fore.WHITE+self.clr, end='\r')
+			if not self.inbattle:
+				self.tracker += 1
+			return True
+		else:
+			return False
 
-# This is the section of code which creates the main window
-root.geometry('715x366')
-root.configure(background='#F0F8FF')
-root.title('Temtem Luma Bot by Eclip5e')
+	# Reposition Character Manual
+	def repositionManual(self):
+		print(Fore.RED + "Please reposition character" + Fore.WHITE+self.clr, end='\r')
+		while not keyboard.is_pressed(self.controls["hold"]) or not self.checkBattle():
+			time.sleep(0.5)
+		print(Fore.GREEN + "Bot resumed" + Fore.WHITE+self.clr, end='\r')
 
-# This is the section of code which creates a combo box
-resList = []
-for i in settings['resList']:
-	resList.append(str(i[0]) + "x" + str(i[1]))
-resolutionSelect= ttk.Combobox(root, values=resList, font=('arial', 12, 'normal'), width=12, state="readonly")
-resolutionSelect.place(x=11, y=36)
-resolutionSelect.current(settings['resolution'])
+	# Reposition Character Automatic
+	def repositionAuto(self):
+		if not self.paused:
+			startTime = datetime.now()
+			delta = datetime.now() - startTime
+			print("Finding Grass...", end='\r')
 
-# This is the section of code which creates the a label
-Label(root, text='Resolution', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=12, y=9)
+			# Walk into random directions
+			while delta.seconds <= self.reposTime * 2:
+				delta = datetime.now() - startTime
+				rand = random.choice([self.controls["up"],self.controls["left"],self.controls["down"],self.controls["right"]])
+				time.sleep(self.randnum(self.walkTime[0], self.walkTime[1]))
+				self.walk(rand)
+				if self.checkBattle():
+					self.inbattle = True
+					return True
+			return False
 
-# This is the section of code which creates the a label
-Label(root, text='Movement Pattern', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=196, y=10)
+	# Check if Luma encounter
+	def checkLuma(self):
+		if self.inbattle:
+			time.sleep(1)
+			return self.searchLuma()
+		else: # Walk
+			self.walkLR()
+			#self.walkUD()
+			print(Fore.WHITE + "Looking for battle..." + Fore.WHITE+self.clr, end='\r')
+			delta = datetime.now() - self.encounter
 
-# This is the section of code which creates a combo box
-patternSelect= ttk.Combobox(root, values=settings['patternList'], font=('arial', 12, 'normal'), width=12, state="readonly")
-patternSelect.place(x=195, y=36)
-patternSelect.current(settings['pattern'])
+			# Reposition
+			# 0 - Dont reposition
+			# 1 - Automatic
+			# 2 - Automatic -> Manual on fail
+			if self.reposType != 0:
+				if delta.seconds >= self.reposTime: # Reposition
+					if self.reposType >= 1 and self.repositionAuto() == False:
+						if self.reposType == 2:
+							self.repositionManual()
 
-# This is the section of code which creates a text input box
-reposTimeIn=Entry(root)
-reposTimeIn.place(x=11, y=168)
-reposTimeIn.insert(0,str(settings['reposTime']))
 
-# This is the section of code which creates the a label
-Label(root, text='Reposition Time', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=12, y=141)
+	# Luma Image recognition
+	def searchLuma(self):
+		if pyautogui.locateOnScreen('./images/luma.png', confidence=self.lumaCheck) != None: # Luma found
+			print(Fore.CYAN + "Luma found!" + Fore.WHITE+self.clr)
+			self.found = True
+			return True
+		else: # No Luma - Flee
+			self.battleFlee()
+			self.encounter = datetime.now()
+		return False
 
-# This is the section of code which creates the a label
-Label(root, text='Walk Time', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=196, y=140)
+	# Image recognition
+	def search(self, img, conf=0.8):
+		simg = pyautogui.locateOnScreen('./images/' + img + '.png', confidence=conf)
+		if simg != None:
+			return simg
+		else:
+			return False
 
-# This is the section of code which creates a text input box
-walkTimeIn=Entry(root)
-walkTimeIn.place(x=193, y=168)
-walkTimeIn.insert(0,str(settings['walkTime']))
+	# Start Bot
+	def start(self):
+		# Init
+		print(Fore.CYAN + "Temtem LumaBot v" + self.version + Fore.WHITE)
+		print(Fore.MAGENTA + "Made by Eclip5e\n" + Fore.WHITE)
+		print("Initializing...", end="\r")
 
-# This is the section of code which creates the a label
-Label(root, text='Output API', bg='#F0F8FF', font=('arial', 12, 'normal')).place(x=12, y=268)
+		time.sleep(2)
+		self.runtime = self.loadRuntime("runtime")
+		print(Fore.GREEN + "Bot running!" + Fore.WHITE+self.clr)
 
-# This is the section of code which creates a text input box
-conApiIn=Entry(root)
-conApiIn.place(x=11, y=296)
-conApiIn.insert(0,str(settings['conApi']))
+		# Main Loop
+		while not keyboard.is_pressed(self.controls["exit"]):
+			self.checkPause()
+			if not self.paused:
+				self.inbattle = self.checkBattle()
+				if self.checkLuma():
+					self.saveRuntime(self.freader.id_generator(random.randint(9,15)))
+					break
+		self.stop()
 
-# This is the section of code which creates a button
-Button(root, text='Save Settings', bg='#D6D6D6', font=('arial', 12, 'normal'), command=btnSave).place(x=200, y=291)
+	# Stop Bot
+	def stop(self):
+		# Save runtime
+		self.saveRuntime("runtime")
 
-# This is the section of code which creates a button
-Button(root, text='Start Bot', bg='#D6D6D6', font=('arial', 12, 'normal'), command=btnStart).place(x=491, y=158)
+		# Quit App
+		print(Fore.CYAN + "Encounters: " + str(self.tracker) + Fore.WHITE+self.clr)
+		print(Fore.LIGHTRED_EX + "Quit" + Fore.WHITE+self.clr)
+		exit()
 
-print("App launched")
-root.mainloop()
+luma = LumaBot()
+luma.start()
