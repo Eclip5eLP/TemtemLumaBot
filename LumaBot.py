@@ -6,7 +6,7 @@
 import sys
 sys.path.append('./data')
 from importer import Importer
-Importer.verifyLibs({'pyautogui', 'keyboard', 'colorama', 'requests', 'opencv-python', 'pypiwin32'})
+Importer.verifyLibs({'pyautogui', 'keyboard', 'colorama', 'requests', 'opencv-python', 'pypiwin32', 'pushbullet.py'}, False)
 
 # Import Modules
 from pyautogui import *
@@ -14,12 +14,11 @@ from datetime import datetime, timedelta
 from colorama import Fore, Back, Style
 from ecpreader import ecpreader
 from LumaWorker import LumaBotWorker, BotState
-import os, shutil
+import os, json, win32gui, shutil
 import pyautogui
 import time
 import keyboard
 import random
-import win32api, win32ui, win32con, win32gui
 import json
 import colorama
 
@@ -32,13 +31,9 @@ colorama.init()
 class LumaBot:
 	# Setup
 	appName = "Temtem LumaBot"
-	reposTime = settings['reposTime']
-	lumaCheck = settings['lumaCheck']
-	walkTime = settings['walkTime']
-	reposType = settings['reposType']
 	controls = settings['controls']
 
-	version = "0.5"
+	version = "0.5.1"
 
 	bot = LumaBotWorker(settings, appName, version)
 

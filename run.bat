@@ -1,6 +1,8 @@
 @echo off
 title Temtem LumaBot
 
-pushd %~dp0
 python LumaBot.py
+echo.
+echo Press enter to exit
+pause > nul
 exit

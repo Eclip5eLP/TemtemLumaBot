@@ -8,21 +8,13 @@ from threading import Thread, Lock
 from datetime import datetime, timedelta
 from colorama import Fore, Back, Style
 from ecpreader import ecpreader
-from win32api import GetSystemMetrics
-from PIL import Image
-import os
+import os, json, win32gui
 import pyautogui
 import time
 import keyboard
 import random
-import win32api, win32ui, win32con, win32gui
-import json
 import colorama
-import ctypes
-
-# Load Settings
-with open('settings.json') as f:
-	settings = json.load(f)
+import pushbullet
 
 colorama.init()
 
@@ -42,12 +34,15 @@ class LumaBotWorker:
 	state = None
 	appName = "Unknown"
 	version = "0"
+	settings = None
 
 	reposTime = 0
 	lumaCheck = 0
 	walkTime = 0
 	reposType = 0
 	controls = 0
+	pushNotifKey = ""
+	notifClient = None
 
 	inbattle = False
 	encounter = datetime.now()
@@ -70,12 +65,14 @@ class LumaBotWorker:
 		self.version = version
 		self.appName = appName
 
+		self.settings = settings
 		self.reposTime = settings['reposTime']
 		self.lumaCheck = settings['lumaCheck']
 		self.walkTime = settings['walkTime']
 		self.reposType = settings['reposType']
 		self.controls = settings['controls']
 		self.pattern = settings['pattern']
+		self.pushNotifKey = settings['pushNotifKey']
 
 	# Start the bot
 	def start(self):
@@ -95,9 +92,10 @@ class LumaBotWorker:
 		self.runtime = self.loadRuntime("runtime")
 		self.state = BotState.SEARCHING
 		print(Fore.GREEN + "Bot running!" + Fore.WHITE+self.clr)
+		self.sendPushNotif("Bot started")
 
 	# Stop the bot
-	def stop(self):
+	def stop(self, luma=False):
 		self.stopped = True
 
 		# Save runtime
@@ -105,7 +103,11 @@ class LumaBotWorker:
 
 		# Quit App
 		print(Fore.CYAN + "Encounters: " + str(self.tracker) + Fore.WHITE+self.clr)
-		print(Fore.LIGHTRED_EX + "Quit" + Fore.WHITE+self.clr)
+		if luma:
+			print(Fore.LIGHTRED_EX + "End" + Fore.WHITE+self.clr)
+		else:
+			print(Fore.LIGHTRED_EX + "Quit" + Fore.WHITE+self.clr)
+			self.sendPushNotif("Bot stopped")
 
 	# Main Bot Logic
 	def run(self):
@@ -127,20 +129,13 @@ class LumaBotWorker:
 					time.sleep(0.5)
 					if self.checkLuma():
 						self.saveRuntime(self.freader.id_generator(random.randint(9,15)))
-						self.stop()
+						self.stop(True)
 						break
-
-	# Click Function
-	def click(self, x,y):
-		win32api.SetCursorPos((x,y))
-		win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
-		time.sleep(self.randnum(0.075, 0.085))
-		win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
 
 	# Save Runtime
 	def saveRuntime(self, name):
 		file = "./data/" + name + ".ecp"
-		runvars = json.dumps({"appName":self.appName,"reposTime":self.reposTime,"reposType":self.reposType,"lumaCheck":self.lumaCheck,"walkTime":self.walkTime,"controls":self.controls,"version":self.version,"inbattle":self.inbattle,"tracker":self.tracker,"paused":self.paused,"found":self.found})
+		runvars = json.dumps({"appName":self.appName,"pushNotifKey":self.pushNotifKey,"reposTime":self.reposTime,"reposType":self.reposType,"lumaCheck":self.lumaCheck,"walkTime":self.walkTime,"controls":self.controls,"version":self.version,"inbattle":self.inbattle,"tracker":self.tracker,"paused":self.paused,"found":self.found})
 		if (os.path.exists(file)):
 			os.remove(file)
 		self.freader.make(file, runvars, 1)
@@ -186,13 +181,6 @@ class LumaBotWorker:
 	# Flee from Battle
 	def battleFlee(self):
 		if not keyboard.is_pressed(self.controls["hold"]):
-			#find = self.search('flee_' + str(self.resId))
-			#if find != False:
-			#	click(find.left + 10, find.top + 10)
-			#	time.sleep(self.randnum(0.45, 0.55))
-			#	click(find.left + 10, find.top + 10)
-			#	self.inbattle = False
-			#	time.sleep(self.randnum(1.5, 2.5))
 			keyboard.send("8")
 			time.sleep(0.3)
 			keyboard.send("8")
@@ -202,12 +190,12 @@ class LumaBotWorker:
 	# Walk left and right
 	def walkLR(self):
 		self.walk(self.controls["left"])
-		time.sleep(self.randnum(0.25, 0.45))
+		time.sleep(self.randnum(0.15, 0.35))
 		self.walk(self.controls["right"])
 	# Walk up and down
 	def walkUD(self):
 		self.walk(self.controls["up"])
-		time.sleep(self.randnum(0.25, 0.45))
+		time.sleep(self.randnum(0.15, 0.35))
 		self.walk(self.controls["down"])
 
 	# Walk any direction
@@ -262,6 +250,7 @@ class LumaBotWorker:
 	def searchLuma(self):
 		if pyautogui.locateOnScreen('./images/luma_'+str(self.resId)+'.png', confidence=self.lumaCheck, grayscale=True, region=(0, 0, self.resolution[0], self.resolution[1] // 2)) != None: # Luma found
 			print(Fore.CYAN + "Luma found!" + Fore.WHITE+self.clr)
+			self.sendPushNotif("Luma found!")
 			self.found = True
 			return True
 		else: # No Luma - Flee
@@ -306,4 +295,14 @@ class LumaBotWorker:
 			self.resId = 0
 			print(Fore.LIGHTRED_EX + "Resolution not directly supported" + Fore.WHITE)
 			return False
+		return True
+
+	# Send a custom Push Notification to users phone
+	def sendPushNotif(self, msg="No Message"):
+		if self.pushNotifKey == "":
+			return False
+		if self.notifClient == None:
+			self.notifClient = pushbullet.PushBullet(self.pushNotifKey)
+
+		push = self.notifClient.push_note(self.appName, msg)
 		return True

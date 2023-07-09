@@ -1,0 +1,10 @@
+colorama==0.4.6
+keyboard==0.13.5
+numpy==1.24.2
+opencv-python==4.7.0.72
+Pillow==9.4.0
+PyAutoGUI==0.9.54
+pypiwin32==223
+pywin32==306
+requests==2.28.2
+pushbullet.py==0.12.0
